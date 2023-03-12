@@ -1,5 +1,6 @@
 #include "Framework.h"
 #include <type_traits>
+#include <cstdio>
 
 const double InputValues[] = 
 {
@@ -155,4 +156,42 @@ double InputToOutputPower(double inputWattage)
 
 	// extended curve fit
 	return -1.446332 + 0.9765686 * inputWattage - 0.003556437 * inputWattage * inputWattage;
+}
+
+
+bool ReadRecording(const char* fp, Recording* result, int* count)
+{
+	FILE* f = fopen(fp, "rb");
+	if (!f)
+		return false;
+
+	fseek(f, 0x31, SEEK_SET);
+
+	int counter = 0;
+	while (!feof(f))
+	{
+		Recording item;
+		fread(&item.m_time, sizeof(item.m_time), 1, f);
+		fread(&item.m_power, sizeof(item.m_power), 1, f);
+
+		if (counter == 0 && item.m_time != 0)
+		{
+			fclose(f);
+			return false;
+		}
+
+		if (result)
+		{
+			result[counter] = item;
+		}
+		counter++;
+	}
+
+	if (count)
+	{
+		*count = counter;
+	}
+
+	fclose(f);
+	return true;
 }
